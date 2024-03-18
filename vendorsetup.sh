@@ -1,6 +1,6 @@
 #
 #	This file is part of the OrangeFox Recovery Project
-# 	Copyright (C) 2021-2023 The OrangeFox Recovery Project
+# 	Copyright (C) 2021-2024 The OrangeFox Recovery Project
 #
 #	OrangeFox is free software: you can redistribute it and/or modify
 #	it under the terms of the GNU General Public License as published by
@@ -17,7 +17,10 @@
 #
 # 	Please maintain this if you use this script or any part of it
 #
+
+#set -o xtrace
 FDEVICE="alioth"
+THIS_DEVICE=${BASH_ARGV[2]}
 
 fox_get_target_device() {
 local chkdev=$(echo "$BASH_SOURCE" | grep -w \"$FDEVICE\")
@@ -29,66 +32,48 @@ local chkdev=$(echo "$BASH_SOURCE" | grep -w \"$FDEVICE\")
    fi
 }
 
-if [ -z "$1" -a -z "$FOX_BUILD_DEVICE" ]; then
+if [ "$THIS_DEVICE" = "alioth" -o "$THIS_DEVICE" = "munch" ]; then
+	FDEVICE="$THIS_DEVICE"
+	[ -z "$FOX_BUILD_DEVICE" ] && FOX_BUILD_DEVICE="$THIS_DEVICE"
+fi
+
+if [ -z "$1" -a -z "$FOX_BUILD_DEVICE" -a -z "$FDEVICE" ]; then
    fox_get_target_device
 fi
 
 if [ "$1" = "$FDEVICE" -o "$FOX_BUILD_DEVICE" = "$FDEVICE" ]; then
-	export OF_USE_GREEN_LED=0
-        export FOX_ENABLE_APP_MANAGER=1
-        export OF_IGNORE_LOGICAL_MOUNT_ERRORS=1
-   	export TW_DEFAULT_LANGUAGE="en"
-	export LC_ALL="C"
- 	export ALLOW_MISSING_DEPENDENCIES=true
-	export TARGET_DEVICE_ALT="aliothin"
-	export OF_TARGET_DEVICES="aliothin,alioth"
-	export OF_VIRTUAL_AB_DEVICE=1
+
+	if [ -z "$THIS_DEVICE" ]; then
+		echo "ERROR! This script requires bash. Run '/bin/bash' and build again."
+		exit 1
+	fi
+
+	export FOX_USE_SPECIFIC_MAGISK_ZIP=~/Magisk/Magisk-v27.0.zip
+        export FOX_VANILLA_BUILD=1
+    	export FOX_ENABLE_APP_MANAGER=1
+	export FOX_VIRTUAL_AB_DEVICE=1
 	export FOX_RECOVERY_SYSTEM_PARTITION="/dev/block/mapper/system"
 	export FOX_RECOVERY_VENDOR_PARTITION="/dev/block/mapper/vendor"
-	export OF_USE_MAGISKBOOT_FOR_ALL_PATCHES=1
-	export OF_DONT_PATCH_ENCRYPTED_DEVICE=1
-	export OF_NO_TREBLE_COMPATIBILITY_CHECK=1
 	export FOX_USE_BASH_SHELL=1
 	export FOX_ASH_IS_BASH=1
 	export FOX_USE_TAR_BINARY=1
 	export FOX_USE_SED_BINARY=1
 	export FOX_USE_XZ_UTILS=1
-	export OF_ENABLE_LPTOOLS=1
 	export FOX_USE_NANO_EDITOR=1
-        export OF_QUICK_BACKUP_LIST="/boot;/data;"
-        export FOX_DELETE_AROMAFM=1
-        export FOX_BUGGED_AOSP_ARB_WORKAROUND="1616300800"; # Sun 21 Mar 04:26:40 GMT 2021
-
-	# screen settings
-	export OF_SCREEN_H=2400
-	export OF_STATUS_H=100
-	export OF_STATUS_INDENT_LEFT=48
-	export OF_STATUS_INDENT_RIGHT=48
-  	export OF_HIDE_NOTCH=1
-	export OF_CLOCK_POS=1
-
-	# maximum permissible splash image size (in kilobytes)
-	#export OF_SPLASH_MAX_SIZE=2048
-
-	# ensure that /sdcard is bind-unmounted before f2fs data repair or format
-	export OF_UNBIND_SDCARD_F2FS=1
+    	export FOX_DELETE_AROMAFM=1
+    	export FOX_BUGGED_AOSP_ARB_WORKAROUND="1616300800"; # Sun 21 Mar 04:26:40 GMT 2021
+    	export TARGET_DEVICE_ALT="aliothin"
 
 	# instruct magiskboot v24+ to always patch the vbmeta header when patching the recovery/boot image; do *not* remove!
-        export OF_PATCH_VBMETA_FLAG="1"
+        export FOX_PATCH_VBMETA_FLAG="1"
 
-	# no special MIUI stuff
-        export OF_VANILLA_BUILD=1
-        export OF_DISABLE_OTA_MENU=1
-
-	# full size
-	export OF_DYNAMIC_FULL_SIZE=9126805504
-
-	# let's see what are our build VARs
-	if [ -n "$FOX_BUILD_LOG_FILE" -a -f "$FOX_BUILD_LOG_FILE" ]; then
-  	   export | grep "FOX" >> $FOX_BUILD_LOG_FILE
-  	   export | grep "OF_" >> $FOX_BUILD_LOG_FILE
-   	   export | grep "TARGET_" >> $FOX_BUILD_LOG_FILE
-  	   export | grep "TW_" >> $FOX_BUILD_LOG_FILE
- 	fi
+	# vendor_boot-as-recovery
+	if [ "$FOX_VENDOR_BOOT_RECOVERY" = "1" ]; then
+	   export FOX_VARIANT="vBaR"
+	fi
+else
+	if [ -z "$FOX_BUILD_DEVICE" -a -z "$BASH_SOURCE" ]; then
+		echo "I: This script requires bash. Not processing the $FDEVICE $(basename $0)"
+	fi
 fi
 #
