@@ -52,7 +52,7 @@ OF_BIND_MOUNT_SDCARD_ON_FORMAT := 1
 # refresh encryption props before formatting data
 #  OF_REFRESH_ENCRYPTION_PROPS_BEFORE_FORMAT := 1
 
-#ifeq ($(FOX_VENDOR_BOOT_RECOVERY),)
-OF_USE_LZ4_COMPRESSION := 1
-#endif
+ifneq ($(FOX_VENDOR_BOOT_RECOVERY),1)
+   OF_USE_LZ4_COMPRESSION := 1
+endif
 #
